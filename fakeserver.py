@@ -27,7 +27,7 @@ print("<<<<<<<<<<<<<<<<<<<<<<<<starting>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 app = Flask(__name__)
 
 
-app.config.from_pyfile(r"C:\Users\ansua\Downloads\IITD\Desktop\Project_8Final_Deepfake\config.cfg")
+app.config.from_pyfile(r"config.cfg")
 mail = Mail(app)
 s = URLSafeTimedSerializer('Thisisasecret!')
 
@@ -36,7 +36,7 @@ socketio = SocketIO(app)
 appp = FaceAnalysis(name='buffalo_l')
 appp.prepare(ctx_id=0, det_size=(640, 640))
 
-swapper = insightface.model_zoo.get_model(r"C:\Users\ansua\Downloads\IITD\Desktop\inswapper_128.onnx", download=False, download_zip=False)
+swapper = insightface.model_zoo.get_model(r"inswapper_128.onnx", download=False, download_zip=False)
 
 email_verf_time=3600 # 1 hour
 watermark_text = 'Fakify'
@@ -61,7 +61,7 @@ class TemporaryStorage:
 storage = TemporaryStorage()
 
 # Read the logo image
-logo = cv2.imread(r"C:\Users\ansua\Downloads\IITD\Desktop\Project_8Final_Deepfake\watermark_logo.png", cv2.IMREAD_UNCHANGED)
+logo = cv2.imread(r"watermark_logo.png", cv2.IMREAD_UNCHANGED)
 def add_logo_watermark(image):
     
     global logo, watermark_text
@@ -727,7 +727,7 @@ def process_vdo():
     global  swapper
     
     if swapper is None:        #### dont load if already loaded
-        swapper = insightface.model_zoo.get_model(r"C:\Users\ansua\Downloads\IITD\Desktop\inswapper_128.onnx", download=False, download_zip=False)
+        swapper = insightface.model_zoo.get_model(r"inswapper_128.onnx", download=False, download_zip=False)
     
     if request.method == 'POST':
         socket_id = request.form.get('socket_id') if request.form.get('socket_id') else request.json.get('socket_id')
