@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Video</title>
+    <style>
+        
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        
+        button {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        @media (max-width: 500px){
+            video{
+            display: block;
+            width: 240px;
+            height: 135;
+            margin: 0 auto;
+            
+        }
+        img{
+            display: block;
+            width: 240px !important;
+            margin: 0 auto;
+        }
+             
+        }
+    </style>
+</head>
+<body>
+    
+    <h1  style="color:rgb(39, 107, 65); font-family:Verdana, Geneva, Tahoma, sans-serif">Fakify</h1>
+    <h2>Download File</h2>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+        var filename;
+        if ('{{ path }}'.trim()){ filename ='{{path}}';}
+        else{ filename ='{{path2}}';
+              document.getElementById("vd").style.display ='none';}  
+        function downloadVideo() {   
+            // Create a link element
+            var link = document.createElement('a');
+            
+            // Set the href attribute to the path of the video file
+            link.href = filename;
+
+            // Set the download attribute with the desired filename
+            link.download = filename;
+
+            // Append the link to the document
+            document.body.appendChild(link);
+
+            // Trigger a click on the link to start the download
+            link.click();
+
+            // Remove the link from the document
+            document.body.removeChild(link);
+        } 
+           
+        document.getElementById("dwld").addEventListener("click", downloadVideo);
+
+            });
+        
+    </script>
+
+    <div>
+    <button id="dwld" onclick="downloadVideo()">Download File </button>
+    <a href="/" style="text-decoration: none;">
+        <button style="background-color: rgba(129, 29, 129, 0.804); color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;margin-left:6px;">
+            New Upload
+        </button>
+    </a>
+    </div>
+
+    
+    <br><br>
+    
+    <video  id="vd" width="320"  controls>
+        <source src='{{path}}' type="video/mp4">
+        
+    </video>
+    <img style="width: 320px;" src='{{path2}}' alt="">
+    
+    
+</body>
+</html>

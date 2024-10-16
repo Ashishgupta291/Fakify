@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fakify</title>
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        
+        document.addEventListener("DOMContentLoaded", function() {
+           
+        // connect through socket
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+        socket.on('connect', function() {
+            var socketIdInput = document.getElementById('socketIdInput');
+            socketIdInput.value = socket.id;
+            console.log('Connected to server');
+        });
+        socket.on('disconnect', function() {
+            console.log('Disconnected from server');
+        });
+        socket.on('update_status', function(data) {
+            var statusElement = $('#status');
+            statusElement.text(data.percentage);
+
+            if (data.percentage === 'File Ready !!') {
+                socket.disconnect();
+            }
+        });
+
+          
+
+
+
+
+        function hoverHandlerIn() { $(this).css('opacity', '0.5');}
+        function hoverHandlerOut() { $(this).css('opacity', '1'); }
+    // Function to show target images and attach 
+       function updateImages(images) {
+        var imageContainer = $('.target_imges');
+        imageContainer.empty(); // Clear previous images
+        
+        var newParagraph = $("<h3>").text("Choose Target Faces -");
+        newParagraph.css("color", "white");
+        newParagraph.css("margin-top", "-8px");
+        newParagraph.addClass("scrollto");
+        imageContainer.append(newParagraph);
+
+        for (var i = 0; i < images.length; i++) {
+            var img = $('<img>', { src: 'data:image/jpeg;base64,' + images[i], class: 'clickable-target-image' });
+            img.data('index', i); // Store index data in the image
+            imageContainer.append(img);
+        }
+        
+         $('.clickable-target-image').css('margin-left', '6px');//0.4vw
+    
+         $('.clickable-target-image').on('mouseenter', hoverHandlerIn);
+         $('.clickable-target-image').on('mouseleave', hoverHandlerOut);
+         $(".scrollto")[0].scrollIntoView({ behavior: 'smooth' });
+         //window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+    }      
+
+
+       
+        var target_indices = [];
+     // for target image clicking
+         $(document).on('click', '.clickable-target-image', function() {
+        var index = $(this).data('index');
+        console.log('Clicked image index:', index);
+        if (!target_indices.includes(index)) {
+           target_indices.push(index);
+           $(this).off('mouseenter', hoverHandlerIn);
+           $(this).off('mouseleave', hoverHandlerOut);
+           $(this).css('border', '0.1vw solid #007bff');
+           $(this).css('box-shadow', '0px 0px 10px 0px #007bff');
+        }
+
+        else{
+            $(this).on('mouseenter', hoverHandlerIn);
+            $(this).on('mouseleave', hoverHandlerOut);
+            target_indices = target_indices.filter(item => item !== index);
+            $(this).css('border', '0.1vw solid white');
+            $(this).css('box-shadow', '0px 0px 0px 0px #007bff');
+        }
+
+        if(target_indices.length>0)
+        {document.querySelector(".start_processing").style.display = "block";}
+        else{document.querySelector(".start_processing").style.display = 'none';}
+        
+         });
+    
+
+       // for target image button clicking
+    $(document).on('click', '.start_processing', function() {
+        $('.start_processing').prop('disabled', true);
+
+        $.ajax({
+            url: '/target',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ index: target_indices, socket_id: socket.id}),
+            success: function(response) {
+                        document.open();
+                        document.write(response);
+                        document.close();
+            },
+            error: function(xhr, status, error) {  console.error('Error sending index:', error); }
+        });
+        
+    });
+
+        
+       
+       // for showing source images
+        function updateSImages(images,nextUrl){
+
+        var imageContainer = $('.source_imges');
+        imageContainer.empty(); // Clear previous images
+        
+        var newParagraph = $("<h3>").text("Select a person -");
+        newParagraph.css("color", "white");
+        newParagraph.css("margin-top", "-8px");
+        newParagraph.addClass("scrolltoSource");
+        imageContainer.append(newParagraph);
+
+        for (var i = 0; i < images.length; i++) {
+            var img = $('<img>', { src: 'data:image/jpeg;base64,' + images[i], class: 's_imges' });
+            img.data('index', i); // Store index data in the image
+            imageContainer.append(img);
+        }
+        
+         $('.s_imges').css('margin-left', '6px'); //0.4vw
+         $('.s_imges').css('width', '64px'); //5vw
+         $('.s_imges').css('cursor', 'pointer');
+         $('.s_imges').css('border', '0.1vw solid white');
+         $('.s_imges').css('border-radius', '6.4px'); //0.5vw
+         $('.s_imges').on('mouseenter', hoverHandlerIn);
+         $('.s_imges').on('mouseleave', hoverHandlerOut);
+         // for clicking of source images
+         $('.s_imges').on('click',function(){
+
+        var index = $(this).index();
+        $(this).css('border', '0.1vw solid #007bff');
+        $(this).css('box-shadow', '0px 0px 10px 0px #007bff');
+        $('.s_imges').css('cursor', 'not-allowed');
+
+        console.log('Clicked Source image index:', index);
+        $('.s_imges').off('click'); // Disable click event for all images working
+        $.ajax({
+                    type: 'POST',
+                    url: nextUrl,
+                    data: {index: index, socket_id: socket.id},
+                    success: function(response){
+                        if (response.target_options){
+                           updateImages(response.target_options);
+                        }
+                        else{document.open();
+                             document.write(response);
+                             document.close();}
+
+                    },error: function(error){ console.log(error);}
+                });
+             } );
+
+
+
+        $(".scrolltoSource")[0].scrollIntoView({ behavior: 'smooth' });
+        //window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+
+            $('#myformm').on('submit', function(event) {
+                event.preventDefault(); // Prevent the default form submission
+                var forms = document.querySelector(".up");
+                forms.disabled = true;
+                forms.style.cursor = "not-allowed";
+                var heading = document.getElementById("status");
+                heading.innerText = "Uploading...";
+                var formData = new FormData(this);
+
+                $.ajax({
+                    url: "/processing",
+                    type: 'POST',
+                    data: formData, 
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {   
+                        if (response.source_options){
+                           updateSImages(response.source_options, response.nexturl);
+                        }
+                        else{ // redirect url of home
+                             document.open();
+                             document.write(response);
+                             document.close();}
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error:', error);
+                        $('#response').html('An error occurred. Please try again.');
+                    }
+                });
+            });
+
+
+
+
+
+        });
+
+    </script>
+
+
+    <style>
+        
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #ffffff; /* testing*/
+            background-color: #1a1a1a; /* testing */
+        }
+        form {
+            padding: 10px;
+            border-radius: 15px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #cccccc; 
+        }
+        input { 
+            width: 98%;
+            margin-bottom: 16px;
+            background-color: #3232325d; 
+            color: #ffffff; 
+            padding: 5px;
+            border: none; 
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(166, 78, 188, 0.5); /* Pink shadow effect */
+        }
+        .up {
+           
+            background-color: rgba(129, 29, 129, 0.804); 
+            color: white;
+            padding: 10px 15px;
+            border: 1px solid rgba(129, 29, 129, 0.804);
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 2px 25px rgba(131, 109, 120, 0.5);
+            width: 98%;
+            display: block;
+            margin: 0 auto;
+        }
+        .up:hover {
+            color: rgba(210, 51, 210, 0.804);
+            background-color: #1a1a1a; /* testing */
+            border: 1px solid white;
+            box-shadow: 0 2px 25px rgba(145, 51, 98, 0.5);
+        } 
+        .source_imges, .target_imges{
+            padding: 10px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .s_imges, .clickable-target-image{
+            width: 64px;
+            border: 0.1vw solid white;
+            border-radius: 6.4px;
+            margin-left: 6px;
+            cursor: pointer;
+            
+        }
+        h1, h5, h3, h4 {
+         color: rgb(150, 77, 113); /* Light green headings */
+        }
+        .logo{
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 500px){
+             .logo{max-width: 300px;
+             margin-top: 70px;}
+
+             .logout{
+                padding: 7px 5px !important;
+             } 
+             .user{
+                padding: 6px 8px !important;
+             } 
+             .newup{padding: 7px 8px !important;}
+             
+        }
+        
+        
+        
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
+    <link rel="shortcut icon" href="https://i.ibb.co/6BTjX3C/icon.png">
+</head>
+<body>
+    <span style="text-decoration: none; position: fixed; margin-top: 17px; right: 20px; ">
+
+    <a class="user" style="text-decoration: none; padding: 10px 15px; border: none; border-radius: 4px; background-color: rgba(14, 124, 47, 0.742); color: white;" >{{userName}}</a>
+    <a class="logout" href="/logout" style="background-color: rgba(52, 15, 188, 0.562);color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer;">
+        <button style="background-color: transparent;border: none;color: white;cursor: pointer;">Log-out</button>
+    </a></span>
+
+    <a class="NU" href="/" style="text-decoration: none; position: fixed; margin-top: 10px; margin-left: 6px;">
+        <button class="newup" style="background-color: rgba(129, 29, 129, 0.804); color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer;">
+            New Upload
+        </button>
+    </a>
+   
+    <form id="myformm" enctype="multipart/form-data">
+        <img class="logo" src="https://i.ibb.co/8xZQ33b/Deep.png" alt="logo">
+        <h5 style="color: rgb(81, 84, 127); margin-top: 0;"><i>This is a DeepFake application Which detects and applies face from an image to a vdo or image.</i></h5>
+
+        <label for="videoFile">Upload Target File(VDO/IMG):</label>
+        <input  type="file" id="videoFile" name="videoFile" accept="image/*,video/*"  required>
+         
+        
+        <label style="display: inline-block;" for="Checkbox">Process All Faces(optional):</label>
+        <input style="width: 30px;" type="checkbox" id="Checkbox" name="Checkbox" value="1">
+               
+
+        <label for="imageFile">Upload Source Image:</label>
+        <input  type="file" id="imageFile" name="imageFile" accept="image/*" required>
+        
+        <input type="hidden" name="socket_id" id="socketIdInput">
+
+        <button class="up" type="submit">Upload</button>
+        <h3 id="status" style="color:#008CBA; text-align: center;">{{msg}}</h3>
+        <h4 style="text-align: center;">Developed By Ashish Gupta <a href="https://www.linkedin.com/in/ashish-gupta-57aa36278"><b style="display: inline-block; background-color: blue;color: white;border-radius: 5px;padding: 2.5px;"> in </b></a></h4>
+    </form>
+    
+    <div class="source_imges"></div>
+    <div class="target_imges"></div>
+
+    <div class="start_proc" style="max-width: 400px;margin: 0 auto;">
+    <button class="start_processing" style="display:none; background-color:#008CBA; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer;">
+        Start Processing
+    </button>
+    </div>
+    
+    
+</body>
+</html>
