@@ -463,7 +463,7 @@ def process_files():
   user_id=session.get('user_id')
   user_name=session.get('user_name') # NOT IN USE BECAUSE SPA
   if user_id:  
-    directory_to_clean = r"C:\Users\ansua\Downloads\IITD\Desktop\Project_8Final_Deepfake\static"
+    directory_to_clean = r"static"
     delete_old_files(directory_to_clean) # ATLEAST 1 HOUR OLD
     if request.method == 'POST':
         global swapper,appp
